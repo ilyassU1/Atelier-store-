@@ -1,0 +1,20 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1791017433655,
+      "tag": "0000_windy_living_tribunal",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1791199163421,
+      "tag": "0001_catalog",
+      "breakpoints": true
+    }
+  ]
+}

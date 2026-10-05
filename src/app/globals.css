@@ -1,26 +1,346 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* ------------------------------------------------------------------------ */
+/* Design tokens — primitives                                               */
+/*                                                                          */
+/* Palette, type scale and spacing modeled on quiet luxury-retail           */
+/* conventions: near-absolute ink/white contrast, a restrained neutral      */
+/* ramp, sharp (unrounded) geometry, hairline dividers instead of boxed     */
+/* borders, and a type scale that pairs a thin, tight-tracked display       */
+/* weight against bold tracked-out uppercase labels. Edit primitives here   */
+/* to re-theme; everything else consumes them.                             */
+/* ------------------------------------------------------------------------ */
+
+/* Neutral ramp — the only color scale in the system. Product/brand color is
+   expected to come from photography and content, not chrome. Declared as
+   theme variables so it replaces Tailwind's built-in `neutral` palette. */
+@theme static {
+  --color-neutral-0: #ffffff;
+  --color-neutral-50: #fafafa;
+  --color-neutral-100: #f4f4f4;
+  --color-neutral-200: #e5e5e5;
+  --color-neutral-300: #d4d4d4;
+  --color-neutral-400: #a3a3a3;
+  --color-neutral-500: #737373;
+  --color-neutral-600: #525252;
+  --color-neutral-700: #333333;
+  --color-neutral-800: #1a1a1a;
+  --color-neutral-900: #0a0a0a;
+  --color-neutral-950: #000000;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+:root {
+  /* Semantic roles (light mode) */
+  --background: var(--color-neutral-0);
+  --foreground: var(--color-neutral-950);
+  --surface-muted: var(--color-neutral-100);
+  --border: var(--color-neutral-200);
+  --muted: var(--color-neutral-500);
+
+  /* Layout primitives */
+  --gutter: 1.25rem;
+  --container-max: 90rem;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: var(--color-neutral-950);
+    --foreground: var(--color-neutral-0);
+    --surface-muted: var(--color-neutral-800);
+    --border: var(--color-neutral-700);
+    --muted: var(--color-neutral-400);
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Gutter widens in two steps as viewport grows, matching the container's
+   responsive breakpoints below. */
+@media (min-width: 48rem) {
+  :root {
+    --gutter: 2rem;
+  }
+}
+@media (min-width: 80rem) {
+  :root {
+    --gutter: 2.5rem;
+  }
+}
+
+@theme inline {
+  /* Color utilities: bg-background, text-foreground, bg-surface-muted,
+     border-border, text-muted, bg-ink / text-ink */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface-muted: var(--surface-muted);
+  --color-border: var(--border);
+  --color-muted: var(--muted);
+  --color-ink: var(--foreground);
+
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+
+  /* Typography scale. Headings/display sizes pair with a light font-weight
+     and negative tracking; label/caption sizes pair with bold weight and
+     open tracking — set per-use below rather than baked into the size. */
+  --text-display: clamp(2.25rem, 1.5rem + 3.2vw, 3.5rem);
+  --text-display--line-height: 1.05;
+  --text-heading-xl: clamp(1.875rem, 1.5rem + 1.6vw, 2.5rem);
+  --text-heading-xl--line-height: 1.1;
+  --text-heading-lg: 1.875rem;
+  --text-heading-lg--line-height: 1.15;
+  --text-heading-md: 1.375rem;
+  --text-heading-md--line-height: 1.25;
+  --text-body-lg: 1.125rem;
+  --text-body-lg--line-height: 1.6;
+  --text-body: 1rem;
+  --text-body--line-height: 1.6;
+  --text-label: 0.75rem;
+  --text-label--line-height: 1.3;
+  --text-caption: 0.75rem;
+  --text-caption--line-height: 1.35;
+
+  /* Letter-spacing companions to the scale above */
+  --tracking-label: 0.02em;
+}
+
+@layer base {
+  * {
+    /* Tailwind v4 drops the v3 default of gray-200 borders; restore a
+       sane default so a bare `border` utility is usable without also
+       specifying a border color every time. */
+    border-color: var(--color-border);
+  }
+
+  html {
+    color-scheme: light dark;
+  }
+
+  body {
+    background: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+    font-size: var(--text-body);
+    line-height: var(--text-body--line-height);
+    letter-spacing: -0.01em;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-weight: 300;
+    letter-spacing: -0.02em;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font-family: inherit;
+    border-radius: 0;
+  }
+
+  :focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background: var(--color-foreground);
+    color: var(--color-background);
+  }
+}
+
+@layer components {
+  /* Full-bleed page shell. Content runs edge to edge with a responsive
+     gutter rather than sitting in a narrow centered column — the grid and
+     imagery are the layout, not a boxed content well. Named `shell` because
+     Tailwind's built-in `container` utility would override the max-width. */
+  .shell {
+    width: 100%;
+    max-width: var(--container-max);
+    margin-inline: auto;
+    padding-inline: var(--gutter);
+  }
+
+  /* Inverse color scope for text and buttons laid over photography. Flips
+     the semantic roles to white-on-dark regardless of the page theme, so
+     .btn-primary, .eyebrow etc. stay legible on an image. */
+  .on-image {
+    --foreground: var(--color-neutral-0);
+    --background: var(--color-neutral-950);
+    --muted: rgb(255 255 255 / 0.8);
+    --color-foreground: var(--foreground);
+    --color-background: var(--background);
+    --color-muted: var(--muted);
+    color: var(--foreground);
+  }
+
+  /* Vertical rhythm between major page sections. Fluid so it scales with
+     viewport instead of jumping at breakpoints. */
+  .section {
+    padding-block: clamp(3rem, 6vw, 6rem);
+  }
+
+  /* The only border weight in the system: a 1px hairline used to separate
+     regions (filter bars, footers) instead of boxed panels or shadows. */
+  .hairline {
+    border-top: 1px solid var(--color-border);
+  }
+
+  /* Small bold uppercase label — section eyebrows, nav labels, button text */
+  .eyebrow {
+    font-size: var(--text-label);
+    line-height: var(--text-label--line-height);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-label);
+  }
+
+  /* Muted meta text — product names, prices, counts */
+  .caption {
+    font-size: var(--text-caption);
+    line-height: var(--text-caption--line-height);
+    font-weight: 500;
+    letter-spacing: -0.01em;
+  }
+
+  /* Underlined inline text link (breadcrumbs, body copy links) */
+  .link {
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+    transition: opacity 150ms ease;
+  }
+  .link:hover {
+    opacity: 0.6;
+  }
+
+  /* Primary nav-style link: no underline at rest, draws on underneath on
+     hover rather than shifting color. */
+  .nav-link {
+    padding-bottom: 0.1em;
+    background-image: linear-gradient(currentColor, currentColor);
+    background-size: 0% 1px;
+    background-position: 0 100%;
+    background-repeat: no-repeat;
+    transition: background-size 200ms ease;
+  }
+  .nav-link:hover {
+    background-size: 100% 1px;
+  }
+
+  /* Buttons — sharp corners, bold uppercase label, generous padding.
+     Two filled/outlined variants plus a borderless text variant. */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: 0;
+    padding: 1rem 1.5rem;
+    font-size: var(--text-label);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-label);
+    white-space: nowrap;
+    cursor: pointer;
+    transition:
+      background-color 200ms ease,
+      color 200ms ease,
+      border-color 200ms ease;
+  }
+
+  .btn-primary {
+    background: var(--color-foreground);
+    color: var(--color-background);
+    border: 1px solid var(--color-foreground);
+  }
+  .btn-primary:hover {
+    background: var(--color-background);
+    color: var(--color-foreground);
+  }
+
+  .btn-secondary {
+    background: transparent;
+    color: var(--color-foreground);
+    border: 1px solid var(--color-foreground);
+  }
+  .btn-secondary:hover {
+    background: var(--color-foreground);
+    color: var(--color-background);
+  }
+
+  .btn-ghost {
+    padding: 0.5rem 0;
+    background: transparent;
+    color: var(--color-foreground);
+    border: 1px solid transparent;
+  }
+  .btn-ghost:hover {
+    opacity: 0.6;
+  }
+
+  /* Unavailable action (e.g. a sold-out product): recedes to the muted
+     surface and stops responding to hover. */
+  .btn:disabled,
+  .btn:disabled:hover {
+    background: var(--color-surface-muted);
+    color: var(--color-muted);
+    border-color: var(--color-surface-muted);
+    opacity: 1;
+    cursor: not-allowed;
+  }
+
+  /* Responsive product grid: 2 / 3 / 4 columns. Tiles sit edge to edge —
+     separation comes from alternating surface color, not gaps or borders. */
+  .product-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0;
+  }
+  @media (min-width: 48rem) {
+    .product-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+  @media (min-width: 80rem) {
+    .product-grid {
+      grid-template-columns: repeat(4, 1fr);
+    }
+  }
+
+  /* Product media frame: fixed aspect ratio, neutral surface behind
+     photography so mixed product shots read as one consistent grid. */
+  .product-media {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    aspect-ratio: 3 / 4;
+    overflow: hidden;
+    background: var(--color-surface-muted);
+  }
+
+  /* Filter / category tab list. Default items are quiet; the active item
+     (aria-current="true") switches to bold uppercase ink. */
+  .tab-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+  }
+  .tab {
+    font-size: var(--text-body);
+    font-weight: 400;
+    color: var(--color-muted);
+  }
+  .tab[aria-current="true"] {
+    font-size: var(--text-label);
+    font-weight: 700;
+    color: var(--color-foreground);
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-label);
+  }
 }
