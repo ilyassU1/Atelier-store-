@@ -4,6 +4,9 @@ import { nextCookies } from "better-auth/next-js";
 
 import { db } from "../db";
 import * as schema from "../db/schema";
+import { assertAuthSecret } from "./auth-secret";
+
+assertAuthSecret();
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
